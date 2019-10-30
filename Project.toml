@@ -1,0 +1,22 @@
+name = "SolarLEDs"
+uuid = "f3d09bf8-b566-5eae-8265-5c481f0c9092"
+authors = ["yakir12 <12.yakir@gmail.com>"]
+version = "0.1.1"
+
+[deps]
+Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
+COBS = "51d40088-776c-571e-837e-515b83a6b6e6"
+Flatten = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
+Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
+LibSerialPort = "a05a14c7-6e3b-5ba9-90a2-45558833e1df"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+julia = "^1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
