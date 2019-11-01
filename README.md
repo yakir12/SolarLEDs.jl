@@ -18,7 +18,7 @@ This is a package for controlling LED strips and simulating multiple "sun"s.
 3. type closed-square-bracket `]` once, you'll see the promt changing from `julia>` to `(v1.2) pkg>`
 3. Copy: 
    ```julia
-   add https://github.com/yakir12/SolarLEDs.jl
+   add https://github.com/yakir12/COBS.jl https://github.com/yakir12/SolarLEDs.jl
    ```
    and paste it in the newly opened Julia-terminal (make sure you ), press Enter (this may take some time), and when it's done press BackSpace (or Delete) until the promt changes back to `julia>`.
 
