@@ -1,11 +1,9 @@
 module SolarLEDs
 
-export main
+export sun_wind_switch, spaceship_dj
 
 using LibSerialPort, Blink, Interact, COBS, ProgressMeter, Flatten, StaticArrays
 
-const N_LEDS_PER_STRIP = 150
-const N_STRIPS = 2
 const N_UPLOAD_ATTEMPTS = 10
 const BUTTON_LABELS = vcat(string.(0:9), "#", "*", "→", "↑", "←", "↓", "OK")
 const N_BUTTONS = length(BUTTON_LABELS)
@@ -44,17 +42,17 @@ struct Sun
     high::UInt8
     siz::UInt8
 end
-function Sun(card::Symbol, pos::Int, rad::Int, int::Int) 
+function Sun(card::Symbol, pos::Int, rad::Int, int::Int, n_leds_per_strip) 
     pos -= 1 + rad
     if card == :NS
-        pos += N_LEDS_PER_STRIP
+        pos += n_leds_per_strip
     end
     low, high = tobytes(pos)
     return Sun(int, low, high, 2rad + 1)
 end
-function guisun()
+function guiaxes(n_leds_per_strip)
     card = radiobuttons([:EW, :NS])
-    pos = slider(1:N_LEDS_PER_STRIP, value = 1)
+    pos = slider(1:n_leds_per_strip, value = 1)
     rad = slider(0:21, value = 0)
     int = slider(0:255, value = 0)
     on(pos) do p
@@ -62,7 +60,7 @@ function guisun()
         if rad[] > a
             rad[] = a
         end
-        a = N_LEDS_PER_STRIP - p
+        a = n_leds_per_strip - p
         if rad[] > a
             rad[] = a
         end
@@ -72,17 +70,52 @@ function guisun()
         if pos[]  < a
             pos[] = a
         end
-        a = N_LEDS_PER_STRIP - r
+        a = n_leds_per_strip - r
         if pos[] > a
             pos[] = a
         end
     end
-    output = map(Sun, card, pos, rad, int)
+    output = map(Sun, card, pos, rad, int, n_leds_per_strip)
     wdg = Widget{:sun}(["card" => card, "pos" => pos, "rad" => rad, "int" => int], output = output)
     @layout! wdg vbox( pad(1em, hbox("Cardinal axes", :card)), pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
 end
-function guisuns(sp)
-    suns = [guisun() for i in 1:4]
+
+function Sun(pos::Int, rad::Int, int::Int) 
+    pos -= 1 + rad
+    low, high = tobytes(pos)
+    return Sun(int, low, high, 2rad + 1)
+end
+function guiazimuth(; n_leds_per_strip = 73)
+    pos = slider(1:n_leds_per_strip, value = 1)
+    rad = slider(0:21, value = 0)
+    int = slider(0:255, value = 0)
+    on(pos) do p
+        a = p - 1
+        if rad[] > a
+            rad[] = a
+        end
+        a = n_leds_per_strip - p
+        if rad[] > a
+            rad[] = a
+        end
+    end
+    on(rad) do r
+        a = r + 1
+        if pos[]  < a
+            pos[] = a
+        end
+        a = n_leds_per_strip - r
+        if pos[] > a
+            pos[] = a
+        end
+    end
+    output = map(Sun, pos, rad, int)
+    wdg = Widget{:sunazimuth}(["pos" => pos, "rad" => rad, "int" => int], output = output)
+    @layout! wdg vbox(pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
+end
+
+function guisuns(sp, azimuth, n_leds_per_strip)
+    suns = azimuth ? [guiazimuth() for i in 1:4] : [guiaxes(n_leds_per_strip) for i in 1:4]
     output = map(suns...) do ss...
         SVector(flatten(ss))
     end
@@ -97,7 +130,7 @@ end
 pos = Int(low | high << 8) + 1
 rad = Int((siz - 1)/2)
 pos += rad
-pos, card = pos > N_LEDS_PER_STRIP ? (pos - N_LEDS_PER_STRIP, :NS) : (pos, :EW)
+pos, card = pos > n_leds_per_strip ? (pos - n_leds_per_strip, :NS) : (pos, :EW)
 (card, pos, rad, int)
 end
 function setgui(b, msg)
@@ -138,11 +171,11 @@ function attemptupload(sp, msg)
     error("failed to upload data after $N_UPLOAD_ATTEMPTS attempts")
 end
 
-function main()
+function _main(azimuth, n_leds_per_strip)
 
     serialport = getport()
 
-    bottoms = Dict(l => guisuns(serialport) for l in BUTTON_LABELS)
+    bottoms = Dict(l => guisuns(serialport, azimuth, n_leds_per_strip) for l in BUTTON_LABELS)
     top = tabs(BUTTON_LABELS)
     bottom = map(top) do l
         bottoms[l]
@@ -168,13 +201,13 @@ function main()
         for (i,l) in enumerate(BUTTON_LABELS)
             b = bottoms[l]
             msg = vcat(0x01, i - 1, b[])
-            attemptupload(msg)
+            attemptupload(serialport, msg)
         end
     end
     reset = button("Reset")
     on(reset) do _
         flush(serialport)
-        uploaded([UInt8(3)])
+        uploaded(serialport, [UInt8(3)])
         @assert Bool(decode(serialport)[])
     end
     # body!(w, dom"div"(hbox(pad(1em, upload), pad(1em, reset)), top, bottom))
@@ -184,6 +217,9 @@ function main()
 
     return nothing
 end
+
+sun_wind_switch() = _main(true, 73)
+spaceship_dj() = _main(false, 150)
 
 ### TODO
 # implement downloading
