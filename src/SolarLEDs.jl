@@ -85,7 +85,7 @@ function Sun(pos::Int, rad::Int, int::Int)
     low, high = tobytes(pos)
     return Sun(int, low, high, 2rad + 1)
 end
-function guiazimuth(; n_leds_per_strip = 73)
+function guiazimuth(n_leds_per_strip)
     pos = slider(1:n_leds_per_strip, value = 1)
     rad = slider(0:21, value = 0)
     int = slider(0:255, value = 0)
@@ -115,7 +115,7 @@ function guiazimuth(; n_leds_per_strip = 73)
 end
 
 function guisuns(sp, azimuth, n_leds_per_strip)
-    suns = azimuth ? [guiazimuth() for i in 1:4] : [guiaxes(n_leds_per_strip) for i in 1:4]
+    suns = azimuth ? [guiazimuth(n_leds_per_strip) for i in 1:4] : [guiaxes(n_leds_per_strip) for i in 1:4]
     output = map(suns...) do ss...
         SVector(flatten(ss))
     end
@@ -218,8 +218,8 @@ function _main(azimuth, n_leds_per_strip)
     return nothing
 end
 
-sun_wind_switch() = _main(true, 73)
-spaceship_dj() = _main(false, 150)
+sun_wind_switch() = _main(false, 150)
+spaceship_dj() = _main(true, 73)
 
 ### TODO
 # implement downloading
