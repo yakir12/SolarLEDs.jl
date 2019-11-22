@@ -42,37 +42,37 @@ struct Sun
     high::UInt8
     siz::UInt8
 end
-function Sun(card::Symbol, pos::Int, rad::Int, int::Int, n_leds_per_strip) 
-    pos -= 1 + rad
+function Sun(card, pos, rad, int, n_leds_per_strip) 
+    pos[] -= 1 + rad[]
     if card == :NS
-        pos += n_leds_per_strip
+        pos[] += n_leds_per_strip
     end
-    low, high = tobytes(pos)
-    return Sun(int, low, high, 2rad + 1)
+    low, high = tobytes(pos[])
+    return Sun(int[], low, high, 2rad[] + 1)
 end
 function guiaxes(n_leds_per_strip)
     card = radiobuttons([:EW, :NS])
-    pos = slider(1:n_leds_per_strip, value = 1)
-    rad = slider(0:21, value = 0)
-    int = slider(0:255, value = 0)
+    pos = rangepicker(1:n_leds_per_strip, value = [1])
+    rad = rangepicker(0:21, value = 0)
+    int = rangepicker(0:255, value = 0)
     on(pos) do p
-        a = p - 1
-        if rad[] > a
-            rad[] = a
+        a = p[] - 1
+        if rad[][] > a
+            rad[][] = a
         end
-        a = n_leds_per_strip - p
-        if rad[] > a
-            rad[] = a
+        a = n_leds_per_strip - p[]
+        if rad[][] > a
+            rad[][] = a
         end
     end
     on(rad) do r
-        a = r + 1
-        if pos[]  < a
-            pos[] = a
+        a = r[] + 1
+        if pos[][]  < a
+            pos[][] = a
         end
-        a = n_leds_per_strip - r
-        if pos[] > a
-            pos[] = a
+        a = n_leds_per_strip - r[]
+        if pos[][] > a
+            pos[][] = a
         end
     end
     output = map(Sun, card, pos, rad, int, n_leds_per_strip)
@@ -80,35 +80,36 @@ function guiaxes(n_leds_per_strip)
     @layout! wdg vbox( pad(1em, hbox("Cardinal axes", :card)), pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
 end
 
-function Sun(pos::Int, rad::Int, int::Int) 
-    pos -= 1 + rad
-    low, high = tobytes(pos)
-    return Sun(int, low, high, 2rad + 1)
+function Sun(pos, rad, int)
+    pos[] -= 1 + rad[]
+    low, high = tobytes(pos[])
+    return Sun(int[], low, high, 2rad[] + 1)
 end
 function guiazimuth(n_leds_per_strip)
-    pos = slider(1:n_leds_per_strip, value = 1)
-    rad = slider(0:21, value = 0)
-    int = slider(0:255, value = 0)
+    pos = rangepicker(1:n_leds_per_strip, value = [1])
+    rad = rangepicker(0:21, value = [0])
+    int = rangepicker(0:255, value = [0])
     on(pos) do p
-        a = p - 1
-        if rad[] > a
-            rad[] = a
+        a = p[] - 1
+        if rad[][] > a
+            rad[][] = a
         end
-        a = n_leds_per_strip - p
-        if rad[] > a
-            rad[] = a
+        a = n_leds_per_strip - p[]
+        if rad[][] > a
+            rad[][] = a
         end
     end
     on(rad) do r
-        a = r + 1
-        if pos[]  < a
-            pos[] = a
+        a = r[] + 1
+        if pos[][]  < a
+            pos[][] = a
         end
-        a = n_leds_per_strip - r
-        if pos[] > a
-            pos[] = a
+        a = n_leds_per_strip - r[]
+        if pos[][] > a
+            pos[][] = a
         end
     end
+
     output = map(Sun, pos, rad, int)
     wdg = Widget{:sunazimuth}(["pos" => pos, "rad" => rad, "int" => int], output = output)
     @layout! wdg vbox(pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
