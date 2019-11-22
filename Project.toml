@@ -18,7 +18,7 @@ Blink = "0.12.0"
 COBS = "0.0.1"
 Flatten = "0.2.1"
 Interact = "0.10.3"
-LibSerialPort = "0.1.0"
+LibSerialPort = "0.2.0"
 ProgressMeter = "1.1.0"
 StaticArrays = "0.11.1"
 
