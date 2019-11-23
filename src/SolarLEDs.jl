@@ -7,28 +7,7 @@ using LibSerialPort, Blink, Interact, COBS, ProgressMeter, Flatten, StaticArrays
 const N_UPLOAD_ATTEMPTS = 10
 const BUTTON_LABELS = vcat(string.(0:9), "#", "*", "→", "↑", "←", "↓", "OK")
 const N_BUTTONS = length(BUTTON_LABELS)
-
-function get_port_list(;nports_guess::Integer=64)
-    ports = sp_list_ports()
-    port_list = String[]
-    for port in unsafe_wrap(Array, ports, nports_guess, own=false)
-        port == C_NULL && return port_list
-        push!(port_list, sp_get_port_name(port))
-    end
-    sp_free_port_list(ports)
-    return port_list
-end
-function getport()
-    for port in get_port_list()
-        sp = open(port, 115200)
-        txt = LibSerialPort.sp_get_port_usb_manufacturer(sp.ref)
-        if occursin(r"arduino", txt)
-            return sp
-        end
-    end
-    error("no ports connected to an Arduino were detected...")
-end
-
+const BAUD = 115200
 
 function tobytes(x::Integer)
     low = UInt8(x & 0xFF)
@@ -173,47 +152,55 @@ end
 
 function _main(azimuth, n_leds_per_strip)
 
-    serialport = getport()
 
-    bottoms = Dict(l => guisuns(serialport, azimuth, n_leds_per_strip) for l in BUTTON_LABELS)
-    top = tabs(BUTTON_LABELS)
-    bottom = map(top) do l
-        bottoms[l]
-    end;
-    #=download = button("Download")
-    on(download) do _
-    l = top[]
-    i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-    uploaded([0x02, i])
-    msg = decode(serialport)
-    setgui(bottoms[l], msg)
-    # bottom[] = bottom[]
-    end=#
-    upload = button("Upload")
-    on(upload) do _
+    ports = get_port_list()
+    if isempty(ports)
+        error("no ports were detected...")
+    end
+    dd = dropdown(ports)
+    ok = button("OK")
+    w = Window()
+    body!(w, hbox("Port", dd, ok))
+    on(ok) do _
+
+        serialport = open(dd[], BAUD)
+        bottoms = Dict(l => guisuns(serialport, azimuth, n_leds_per_strip) for l in BUTTON_LABELS)
+        top = tabs(BUTTON_LABELS)
+        bottom = map(top) do l
+            bottoms[l]
+        end;
+        #=download = button("Download")
+        on(download) do _
         l = top[]
         i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-        msg = vcat(0x01, i, bottom[][])
-        attemptupload(serialport, msg)
-    end
-    uploadall = button("Upload all")
-    on(uploadall) do _
-        for (i,l) in enumerate(BUTTON_LABELS)
-            b = bottoms[l]
-            msg = vcat(0x01, i - 1, b[])
+        uploaded([0x02, i])
+        msg = decode(serialport)
+        setgui(bottoms[l], msg)
+        # bottom[] = bottom[]
+        end=#
+        upload = button("Upload")
+        on(upload) do _
+            l = top[]
+            i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
+            msg = vcat(0x01, i, bottom[][])
             attemptupload(serialport, msg)
         end
+        uploadall = button("Upload all")
+        on(uploadall) do _
+            for (i,l) in enumerate(BUTTON_LABELS)
+                b = bottoms[l]
+                msg = vcat(0x01, i - 1, b[])
+                attemptupload(serialport, msg)
+            end
+        end
+        reset = button("Reset")
+        on(reset) do _
+            flush(serialport)
+            uploaded(serialport, [UInt8(3)])
+            @assert Bool(decode(serialport)[])
+        end
+        body!(w, dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom))
     end
-    reset = button("Reset")
-    on(reset) do _
-        flush(serialport)
-        uploaded(serialport, [UInt8(3)])
-        @assert Bool(decode(serialport)[])
-    end
-    # body!(w, dom"div"(hbox(pad(1em, upload), pad(1em, reset)), top, bottom))
-    w = Window()
-    body!(w, dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom))
-    # body!(w, dom"div"(hbox(pad(1em, download), pad(1em, upload), pad(1em, reset)), top, bottom))
 
     return nothing
 end
@@ -223,8 +210,6 @@ spaceship_dj() = _main(true, 73)
 
 ### TODO
 # implement downloading
-# start solidifyig the wires
-# maybe print remote layout for ease of use
 # maybe prepare hosting this to a server for mobile interface
 
 
