@@ -29,10 +29,10 @@ void setup()
   strip.show();
 
   irrecv.enableIRIn();
-  // irrecv.blink13(true);
+  irrecv.blink13(true);
 
-
-
+  SPI.begin();
+  // SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
 
 }
 
@@ -193,5 +193,4 @@ uint8_t IR2button(decode_results IR_result) {
       return 17;
   }
 }
-
 
