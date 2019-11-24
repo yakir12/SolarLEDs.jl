@@ -22,36 +22,36 @@ struct Sun
     siz::UInt8
 end
 function Sun(card, pos, rad, int, n_leds_per_strip) 
-    pos[] -= 1 + rad[]
+    pos -= 1 + rad
     if card == :NS
-        pos[] += n_leds_per_strip
+        pos += n_leds_per_strip
     end
-    low, high = tobytes(pos[])
-    return Sun(int[], low, high, 2rad[] + 1)
+    low, high = tobytes(pos)
+    return Sun(int, low, high, 2rad + 1)
 end
 function guiaxes(n_leds_per_strip)
     card = radiobuttons([:EW, :NS])
-    pos = rangepicker(1:n_leds_per_strip, value = [1])
-    rad = rangepicker(0:21, value = 0)
-    int = rangepicker(0:255, value = 0)
+    pos = slider(1:n_leds_per_strip, value = 1)
+    rad = slider(0:21, value = 0)
+    int = slider(0:255, value = 0)
     on(pos) do p
-        a = p[] - 1
-        if rad[][] > a
-            rad[][] = a
+        a = p - 1
+        if rad[] > a
+            rad[] = a
         end
         a = n_leds_per_strip - p[]
-        if rad[][] > a
-            rad[][] = a
+        if rad[] > a
+            rad[] = a
         end
     end
     on(rad) do r
-        a = r[] + 1
-        if pos[][]  < a
-            pos[][] = a
+        a = r + 1
+        if pos[]  < a
+            pos[] = a
         end
-        a = n_leds_per_strip - r[]
-        if pos[][] > a
-            pos[][] = a
+        a = n_leds_per_strip - r
+        if pos[] > a
+            pos[] = a
         end
     end
     output = map(Sun, card, pos, rad, int, n_leds_per_strip)
@@ -60,32 +60,32 @@ function guiaxes(n_leds_per_strip)
 end
 
 function Sun(pos, rad, int)
-    pos[] -= 1 + rad[]
-    low, high = tobytes(pos[])
-    return Sun(int[], low, high, 2rad[] + 1)
+    pos -= 1 + rad
+    low, high = tobytes(pos)
+    return Sun(int, low, high, 2rad + 1)
 end
 function guiazimuth(n_leds_per_strip)
-    pos = rangepicker(1:n_leds_per_strip, value = [1])
-    rad = rangepicker(0:21, value = [0])
-    int = rangepicker(0:255, value = [0])
+    pos = slider(1:n_leds_per_strip, value = 1)
+    rad = slider(0:21, value = 0)
+    int = slider(0:255, value = 0)
     on(pos) do p
-        a = p[] - 1
-        if rad[][] > a
-            rad[][] = a
+        a = p - 1
+        if rad[] > a
+            rad[] = a
         end
-        a = n_leds_per_strip - p[]
-        if rad[][] > a
-            rad[][] = a
+        a = n_leds_per_strip - p
+        if rad[] > a
+            rad[] = a
         end
     end
     on(rad) do r
-        a = r[] + 1
-        if pos[][]  < a
-            pos[][] = a
+        a = r + 1
+        if pos[]  < a
+            pos[] = a
         end
-        a = n_leds_per_strip - r[]
-        if pos[][] > a
-            pos[][] = a
+        a = n_leds_per_strip - r
+        if pos[] > a
+            pos[] = a
         end
     end
 
@@ -158,50 +158,48 @@ function _main(azimuth, n_leds_per_strip)
     if isempty(ports)
         error("no ports were detected...")
     end
-    dd = dropdown(ports)
-    ok = button("OK")
-    w = Window()
-    body!(w, hbox("Port", dd, ok))
-    on(ok) do _
+    dd = dropdown(ports, value = last(ports))
 
-        serialport = open(dd[], BAUD)
-        bottoms = Dict(l => guisuns(serialport, azimuth, n_leds_per_strip) for l in BUTTON_LABELS)
-        top = tabs(BUTTON_LABELS)
-        bottom = map(top) do l
-            bottoms[l]
-        end;
-        #=download = button("Download")
-        on(download) do _
+    serialport = map(dd) do sp
+        open(sp, BAUD)
+    end
+    bottoms = Dict(l => map(x -> guisuns(x, azimuth, n_leds_per_strip), serialport) for l in BUTTON_LABELS)
+    top = tabs(BUTTON_LABELS)
+    bottom = map(top) do l
+        bottoms[l][]
+    end;
+    #=download = button("Download")
+    on(download) do _
+    l = top[]
+    i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
+    uploaded([0x02, i])
+    msg = decode(serialport)
+    setgui(bottoms[l], msg)
+    # bottom[] = bottom[]
+    end=#
+    upload = button("Upload")
+    on(upload) do _
         l = top[]
         i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-        uploaded([0x02, i])
-        msg = decode(serialport)
-        setgui(bottoms[l], msg)
-        # bottom[] = bottom[]
-        end=#
-        upload = button("Upload")
-        on(upload) do _
-            l = top[]
-            i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-            msg = vcat(0x01, i, bottom[][])
-            attemptupload(serialport, msg)
-        end
-        uploadall = button("Upload all")
-        on(uploadall) do _
-            for (i,l) in enumerate(BUTTON_LABELS)
-                b = bottoms[l]
-                msg = vcat(0x01, i - 1, b[])
-                attemptupload(serialport, msg)
-            end
-        end
-        reset = button("Reset")
-        on(reset) do _
-            flush(serialport)
-            uploaded(serialport, [UInt8(3)])
-            @assert Bool(decode(serialport)[])
-        end
-        body!(w, dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom))
+        msg = vcat(0x01, i, bottom[][])
+        attemptupload(serialport[], msg)
     end
+    uploadall = button("Upload all")
+    on(uploadall) do _
+        for (i,l) in enumerate(BUTTON_LABELS)
+            b = bottoms[l]
+            msg = vcat(0x01, i - 1, b[])
+            attemptupload(serialport[], msg)
+        end
+    end
+    reset = button("Reset")
+    on(reset) do _
+        flush(serialport[])
+        uploaded(serialport[], [UInt8(3)])
+        @assert Bool(decode(serialport[])[])
+    end
+    w = Window()
+    body!(w, vbox(hbox("Port", dd), dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom)))
 
     return nothing
 end
