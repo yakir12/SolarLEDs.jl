@@ -44,9 +44,9 @@ function Sun(card, pos, rad, int, n_leds_per_strip)
 end
 function guiaxes(setup)
     card = radiobuttons(setup.cardinals)
-    pos = slider(setup.elevations, value = 1)
-    rad = slider(setup.radii, value = 0)
-    int = slider(setup.intensities, value = 0)
+    pos = slider(setup.elevations)
+    rad = slider(setup.radii)
+    int = slider(setup.intensities)
     on(pos) do p
         a = p - 1
         if rad[] > a
@@ -72,75 +72,6 @@ function guiaxes(setup)
     @layout! wdg vbox( pad(1em, hbox("Cardinal axes", :card)), pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
 end
 
-function Sun(pos, rad, int)
-    pos -= 1 + rad
-    low, high = tobytes(pos)
-    return Sun(int, low, high, 2rad + 1)
-end
-function guiazimuth(n_leds_per_strip)
-    pos = slider(1:n_leds_per_strip, value = 1)
-    rad = slider(0:21, value = 0)
-    int = slider(0:255, value = 0)
-    on(pos) do p
-        a = p - 1
-        if rad[] > a
-            rad[] = a
-        end
-        a = n_leds_per_strip - p
-        if rad[] > a
-            rad[] = a
-        end
-    end
-    on(rad) do r
-        a = r + 1
-        if pos[]  < a
-            pos[] = a
-        end
-        a = n_leds_per_strip - r
-        if pos[] > a
-            pos[] = a
-        end
-    end
-
-    output = map(Sun, pos, rad, int)
-    wdg = Widget{:sunazimuth}(["pos" => pos, "rad" => rad, "int" => int], output = output)
-    @layout! wdg vbox(pad(1em, hbox("Position", :pos)), pad(1em, hbox("Radius", :rad)), pad(1em, hbox("Intensity", :int)))
-end
-
-#=function guisuns(sp, azimuth, n_leds_per_strip)
-    suns = azimuth ? [guiazimuth(n_leds_per_strip) for i in 1:4] : [guiaxes(n_leds_per_strip) for i in 1:4]
-    output = map(suns...) do ss...
-        SVector(flatten(ss))
-    end
-    on(output) do pl
-        encode(sp, [0x00; pl])
-    end
-    d = Dict("sun$i" => s for (i,s) in enumerate(suns))
-    wdg = Widget{:suns}(d, output = output)
-    @layout! wdg hbox(:sun1, :sun2, :sun3, :sun4)
-end=#
-
-#=function bytes2gui(int, low, high, siz)
-pos = Int(low | high << 8) + 1
-rad = Int((siz - 1)/2)
-pos += rad
-pos, card = pos > n_leds_per_strip ? (pos - n_leds_per_strip, :NS) : (pos, :EW)
-(card, pos, rad, int)
-end
-function setgui(b, msg)
-for i in 1:4
-fr = msg[1 + 4*(i - 1) : 4i]
-card, pos, rad, int = bytes2gui(fr...)
-l = Symbol("sun$i")
-sun = b[l]
-sun[:card][] = card
-sun[:pos][] = pos
-sun[:rad][] = rad
-sun[:int][] = int
-sun[] = sun[]
-end
-# b[] = b[]
-end=#
 function uploaded(sp, msg)
     encode(sp, msg)
     @showprogress 0 "Uploading..." for i in 1:100
@@ -164,62 +95,6 @@ function attemptupload(sp, msg)
     end
     error("failed to upload data after $N_UPLOAD_ATTEMPTS attempts")
 end
-
-#=function _main(azimuth, n_leds_per_strip)
-
-
-    ports = get_port_list()
-    if isempty(ports)
-        error("no ports were detected...")
-    end
-    dd = dropdown(ports, value = last(ports))
-
-    serialport = map(dd) do sp
-        open(sp, BAUD)
-    end
-    bottoms = Dict(l => map(x -> guisuns(x, azimuth, n_leds_per_strip), serialport) for l in BUTTON_LABELS)
-    top = tabs(BUTTON_LABELS)
-    bottom = map(top) do l
-        bottoms[l][]
-    end;
-    =##=download = button("Download")
-    on(download) do _
-    l = top[]
-    i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-    uploaded([0x02, i])
-    msg = decode(serialport)
-    setgui(bottoms[l], msg)
-    # bottom[] = bottom[]
-    end=##=
-    upload = button("Upload")
-    on(upload) do _
-        l = top[]
-        i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
-        msg = vcat(0x01, i, bottom[][])
-        attemptupload(serialport[], msg)
-    end
-    uploadall = button("Upload all")
-    on(uploadall) do _
-        for (i,l) in enumerate(BUTTON_LABELS)
-            b = bottoms[l]
-            msg = vcat(0x01, i - 1, b[])
-            attemptupload(serialport[], msg)
-        end
-    end
-    reset = button("Reset")
-    on(reset) do _
-        flush(serialport[])
-        uploaded(serialport[], [UInt8(3)])
-        @assert Bool(decode(serialport[])[])
-    end
-    w = Window()
-    body!(w, vbox(hbox("Port", dd), dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom)))
-
-    return nothing
-end=#
-
-# sun_wind_switch() = _main(false, 150)
-# spaceship_dj() = _main(true, 73)
 
 struct Setup
     nsuns::Int
