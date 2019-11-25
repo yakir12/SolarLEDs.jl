@@ -93,6 +93,18 @@ struct Setup
 end
 
 function main(; n_leds_per_strip::Int = 150, cardinals = [:EW, :NS], elevations = 1:150, radii = 0:25, intensities = 0:255) 
+    if 0 ∉ intensities
+        push!(intensities, 0)
+    end
+    if !issorted(elevations)
+        sort!(elevations)
+    end
+    if !issorted(radii)
+        sort!(radii)
+    end
+    if !issorted(intensities)
+        sort!(intensities)
+    end
     nsuns = 4
     @assert 0 < nsuns "number of suns must be larger than zero"
     @assert 0 < n_leds_per_strip "number of LEDs per strip must be larger than zero"
