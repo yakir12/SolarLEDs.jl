@@ -31,9 +31,9 @@ function Sun(card, pos, rad, int, n_leds_per_strip)
 end
 function guiaxes(setup)
     card = radiobuttons(setup.cardinals)
-    pos = slider(setup.elevations)
-    rad = slider(setup.radii)
-    int = slider(setup.intensities)
+    pos = slider(setup.elevations, value = first(setup.elevations))
+    rad = slider(setup.radii, value = first(setup.radii))
+    int = slider(setup.intensities, value = first(setup.intensities))
     on(pos) do p
         a = p - 1
         if rad[] > a
