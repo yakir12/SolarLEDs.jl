@@ -4,6 +4,19 @@ export main, spaceship_dj, sun_wind_switch
 
 using LibSerialPort, Blink, Interact, COBS, ProgressMeter, Flatten, StaticArrays
 
+#remove this
+function get_port_list(;nports_guess::Integer=64)
+    ports = sp_list_ports()
+    port_list = String[]
+    for port in unsafe_wrap(Array, ports, nports_guess, own=false)
+        port == C_NULL && return port_list
+        push!(port_list, sp_get_port_name(port))
+    end
+    sp_free_port_list(ports)
+    return port_list
+end
+
+
 const N_UPLOAD_ATTEMPTS = 10
 const BUTTON_LABELS = vcat(string.(0:9), "#", "*", "→", "↑", "←", "↓", "OK")
 const N_BUTTONS = length(BUTTON_LABELS)
