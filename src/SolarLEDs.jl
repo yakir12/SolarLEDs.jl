@@ -133,7 +133,7 @@ function main(setup)
     if isempty(ports)
         error("no ports were detected...")
     end
-    dd = dropdown(ports, value = last(ports))
+    dd = dropdown(ports)
 
     serialport = map(dd) do sp
         open(sp, BAUD)
