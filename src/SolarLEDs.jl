@@ -141,6 +141,7 @@ function main(setup)
 
 
     ports = get_port_list()
+    filter!(occursin("14"), ports)
     filter!(goodport, ports)
     if isempty(ports)
         error("no ports were detected...")
