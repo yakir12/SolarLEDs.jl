@@ -124,7 +124,7 @@ function main(; n_leds_per_strip::Int = 150, cardinals = [:EW, :NS], elevations 
     main(Setup(nsuns, n_leds_per_strip, cardinals, elevations, radii, intensities))
 end
 
-sun_wind_switch() = main(n_leds_per_strip = 141, elevations = [5, 17, 36, 48, 59, 63, 65, 66, 68, 69, 71, 73, 74, 76, 77, 79, 83, 94, 106, 125, 137], radii = [0], intensities = [255])
+sun_wind_switch() = main(n_leds_per_strip = 150, elevations = [5, 17, 36, 48, 59, 63, 65, 66, 68, 69, 71, 73, 74, 76, 77, 79, 83, 94, 106, 125, 137], radii = [0], intensities = [255])
 spaceship_dj() = main(n_leds_per_strip = 73, elevations = [12, 29, 46, 64], radii = [0,1,2], intensities = 0:255, cardinals = [:NA])
 
 function goodport(port) 
