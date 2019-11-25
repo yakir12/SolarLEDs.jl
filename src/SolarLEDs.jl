@@ -5,7 +5,7 @@ export main, spaceship_dj, sun_wind_switch
 using LibSerialPort, Blink, Interact, COBS, ProgressMeter, Flatten, StaticArrays
 
 #remove this
-function get_port_list(;nports_guess::Integer=64)
+#=function get_port_list(;nports_guess::Integer=64)
     ports = sp_list_ports()
     port_list = String[]
     for port in unsafe_wrap(Array, ports, nports_guess, own=false)
@@ -14,7 +14,7 @@ function get_port_list(;nports_guess::Integer=64)
     end
     sp_free_port_list(ports)
     return port_list
-end
+end=#
 
 
 const N_UPLOAD_ATTEMPTS = 10
@@ -127,34 +127,29 @@ end
 sun_wind_switch() = main(n_leds_per_strip = 150, elevations = [5, 17, 36, 48, 59, 63, 65, 66, 68, 69, 71, 73, 74, 76, 77, 79, 83, 94, 106, 125, 137], radii = [0], intensities = [255])
 spaceship_dj() = main(n_leds_per_strip = 73, elevations = [12, 29, 46, 64], radii = [0,1,2], intensities = 0:255, cardinals = [:NA])
 
-function goodport(port) 
-    try
-        sp = open(port, BAUD)
-        close(sp)
-    catch 
-        return false
+function returnport()
+    for port in get_port_list()
+        sp = LibSerialPort.sp_get_port_by_name(port)
+        if occursin(r"arduino", LibSerialPort.sp_get_port_usb_manufacturer(sp))
+            LibSerialPort.sp_free_port(sp)
+            return port
+        end
+        LibSerialPort.sp_free_port(sp)
     end
-    return true
+    return nothing
 end
 
 function main(setup)
 
 
-    ports = get_port_list()
-    filter!(occursin("14"), ports)
-    filter!(goodport, ports)
-    if isempty(ports)
-        error("no ports were detected...")
-    end
-    dd = dropdown(ports)
+    port = returnport()
+    isnothing(port) && error("no ports were detected...")
+    serialport = open(port, BAUD)
 
-    serialport = map(dd) do sp
-        open(sp, BAUD)
-    end
-    bottoms = Dict(l => map(x -> guisuns(x, setup), serialport) for l in BUTTON_LABELS)
+    bottoms = Dict(l => guisuns(serialport, setup) for l in BUTTON_LABELS)
     top = tabs(BUTTON_LABELS)
     bottom = map(top) do l
-        bottoms[l][]
+        bottoms[l]
     end
     #=download = button("Download")
     on(download) do _
@@ -170,24 +165,24 @@ function main(setup)
         l = top[]
         i = UInt8(findfirst(isequal(l), BUTTON_LABELS) - 1)
         msg = vcat(0x01, i, bottom[][])
-        attemptupload(serialport[], msg)
+        attemptupload(serialport, msg)
     end
     uploadall = button("Upload all")
     on(uploadall) do _
         for (i,l) in enumerate(BUTTON_LABELS)
             b = bottoms[l]
             msg = vcat(0x01, i - 1, b[])
-            attemptupload(serialport[], msg)
+            attemptupload(serialport, msg)
         end
     end
     reset = button("Reset")
     on(reset) do _
-        flush(serialport[])
-        uploaded(serialport[], [UInt8(3)])
-        @assert Bool(decode(serialport[])[])
+        flush(serialport)
+        uploaded(serialport, [UInt8(3)])
+        @assert Bool(decode(serialport)[])
     end
     w = Window()
-    body!(w, vbox(hbox("Port", dd), dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom)))
+    body!(w, dom"div"(hbox(pad(1em, uploadall), pad(1em, upload), pad(1em, reset)), top, bottom))
 
     return nothing
 end
