@@ -44,9 +44,9 @@ function Sun(card, pos, rad, int, n_leds_per_strip)
 end
 function guiaxes(setup)
     card = radiobuttons(setup.cardinals)
-    pos = slider(setup.elevations)
-    rad = slider(setup.radii)
-    int = slider(setup.intensities)
+    pos = slider(setup.elevations, value = first(setup.elevations))
+    rad = slider(setup.radii, value = first(setup.radii))
+    int = slider(setup.intensities, value = first(setup.intensities))
     on(pos) do p
         a = p - 1
         if rad[] > a
@@ -106,6 +106,18 @@ struct Setup
 end
 
 function main(; n_leds_per_strip::Int = 150, cardinals = [:EW, :NS], elevations = 1:150, radii = 0:25, intensities = 0:255) 
+    if 0 ∉ intensities
+        push!(intensities, 0)
+    end
+    if !issorted(elevations)
+        sort!(elevations)
+    end
+    if !issorted(radii)
+        sort!(radii)
+    end
+    if !issorted(intensities)
+        sort!(intensities)
+    end
     nsuns = 4
     @assert 0 < nsuns "number of suns must be larger than zero"
     @assert 0 < n_leds_per_strip "number of LEDs per strip must be larger than zero"
@@ -113,7 +125,7 @@ function main(; n_leds_per_strip::Int = 150, cardinals = [:EW, :NS], elevations 
 end
 
 sun_wind_switch() = main(n_leds_per_strip = 150, elevations = [5, 20, 45, 60, 75, 80, 82, 84, 86, 88, 90], radii = [0], intensities = [255])
-spaceship_dj() = main(n_leds_per_strip = 73, elevations = [12, 29, 46, 64], radii = [0,1,2], intensities = 1:255, cardinals = [:NA])
+spaceship_dj() = main(n_leds_per_strip = 73, elevations = [12, 29, 46, 64], radii = [0,1,2], intensities = 0:255, cardinals = [:NA])
 
 function goodport(port) 
     try
