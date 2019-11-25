@@ -106,7 +106,7 @@ struct Setup
 end
 
 function main(; n_leds_per_strip::Int = 150, cardinals = [:EW, :NS], elevations = 1:150, radii = 0:25, intensities = 0:255) 
-    nsuns = 1
+    nsuns = 4
     @assert 0 < nsuns "number of suns must be larger than zero"
     @assert 0 < n_leds_per_strip "number of LEDs per strip must be larger than zero"
     main(Setup(nsuns, n_leds_per_strip, cardinals, elevations, radii, intensities))
@@ -189,7 +189,7 @@ function guisuns(sp, setup)
     end
     d = Dict("sun$i" => s for (i,s) in enumerate(suns))
     wgt = Widget{:suns}(d, output = output)
-    @layout! wgt vbox(:sun1)
+    @layout! wgt hbox(:sun1, :sun2, :sun3, :sun4)
 end
 
 ### TODO
